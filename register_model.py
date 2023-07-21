@@ -2,13 +2,13 @@ import mlflow
 import pandas as pd
 import torch
 import transformers
-from huggingface_hub import notebook_login, snapshot_download
+from huggingface_hub import login, snapshot_download
 from mlflow import MlflowClient
 from mlflow.models.signature import ModelSignature
 from mlflow.types import ColSpec, DataType, Schema
 
 # Login to Huggingface to get access to the model
-notebook_login()
+login(token=dbutils.secrets.get(scope="jtisbell", key="hf-key"))
 
 # it is suggested to pin the revision commit hash and not change it for reproducibility because the uploader might change the model afterwards; you can find the commmit history of llamav2-7b-chat in https://huggingface.co/meta-llama/Llama-2-7b-chat-hf/commits/main
 model = "meta-llama/Llama-2-7b-chat-hf"
