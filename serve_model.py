@@ -1,3 +1,5 @@
+import os
+
 from databricks.sdk import WorkspaceClient
 from databricks.sdk.service.serving import EndpointCoreConfigInput
 from mlflow import MlflowClient
@@ -11,7 +13,10 @@ model_version = mlflow_client.get_latest_versions(
     name=model_name, stages=["Staging"]
 )[0]
 
-w = WorkspaceClient()
+os.environ["DATABRICKS_TOKEN"] = dbutils.secrets.get(
+    scope="jtisbell", key="db-token"
+)
+w = WorkspaceClient(auth_type="pat")
 
 endpoint_config = {
     "name": endpoint_name,
