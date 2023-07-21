@@ -23,7 +23,7 @@ endpoint_config = {
                 "model_version": model_version.version,
                 "workload_type": "GPU_MEDIUM",
                 "workload_size": "Small",
-                "scale_to_zero_enabled": "False",
+                "scale_to_zero_enabled": "True",
             }
         ]
     },
