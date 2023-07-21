@@ -20,10 +20,7 @@ def load_data(data_dir: str):
     loader = PyPDFDirectoryLoader(data_dir)
     pages = loader.load_and_split()
 
-    os.environ[
-        "OPENAI_API_KEY"
-    ] = "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"
-    embeddings = OpenAIEmbeddings()  # noqa
+    embeddings = OpenAIEmbeddings()
     db = Chroma.from_documents(
         pages, embeddings, persist_directory=VECTOR_DB_DIR
     )
