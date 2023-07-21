@@ -20,9 +20,9 @@ model_version = mlflow_client.get_latest_versions(
     name=model_name, stages=["Staging"]
 )[0]
 
-endpoint_config = {
-    "name": endpoint_name,
-    "config": {
+endpoint_config = (
+    {
+        "name": endpoint_name,
         "served_models": [
             {
                 "name": f'{model_version.name.replace(".", "_")}_{model_version.version}',
@@ -32,9 +32,9 @@ endpoint_config = {
                 "workload_size": "Small",
                 "scale_to_zero_enabled": "True",
             }
-        ]
+        ],
     },
-}
+)
 
 w.serving_endpoints.create(
     name=endpoint_name,
