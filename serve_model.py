@@ -1,45 +1,18 @@
-# COMMAND ----------
+from databricks.sdk import WorkspaceClient
+from databricks.sdk.service.serving import EndpointCoreConfigInput
+from mlflow import MlflowClient
 
-# MAGIC %md
-# MAGIC ## Create Model Serving Endpoint
-# MAGIC Once the model is registered, we can use API to create a Databricks GPU Model Serving Endpoint that serves the `LLaMAV2-7b` model.
-# MAGIC
-
-# COMMAND ----------
-
-# Provide a name to the serving endpoint
+# TODO: make dynamic
+model_name = "llamav2_7b_chat_model"
 endpoint_name = "llama2-7b-chat"
 
-# COMMAND ----------
+mlflow_client = MlflowClient()
+model_version = mlflow_client.get_latest_versions(
+    name=model_name, stages=["Staging"]
+)[0]
 
-databricks_url = (
-    dbutils.notebook.entry_point.getDbutils()
-    .notebook()
-    .getContext()
-    .apiUrl()
-    .getOrElse(None)
-)
-token = (
-    dbutils.notebook.entry_point.getDbutils()
-    .notebook()
-    .getContext()
-    .apiToken()
-    .getOrElse(None)
-)
+w = WorkspaceClient()
 
-# COMMAND ----------
-
-import json
-
-import requests
-
-deploy_headers = {
-    "Authorization": f"Bearer {token}",
-    "Content-Type": "application/json",
-}
-deploy_url = f"{databricks_url}/api/2.0/serving-endpoints"
-
-model_version = result  # the returned result of mlflow.register_model
 endpoint_config = {
     "name": endpoint_name,
     "config": {
@@ -55,24 +28,8 @@ endpoint_config = {
         ]
     },
 }
-endpoint_json = json.dumps(endpoint_config, indent="  ")
 
-# Send a POST request to the API
-deploy_response = requests.request(
-    method="POST", headers=deploy_headers, url=deploy_url, data=endpoint_json
+w.serving_endpoints.create(
+    name=endpoint_name,
+    config=EndpointCoreConfigInput.from_dict(endpoint_config),
 )
-
-if deploy_response.status_code != 200:
-    raise Exception(
-        f"Request failed with status {deploy_response.status_code}, {deploy_response.text}"
-    )
-
-# Show the response of the POST request
-# When first creating the serving endpoint, it should show that the state 'ready' is 'NOT_READY'
-# You can check the status on the Databricks model serving endpoint page, it is expected to take ~35 min for the serving endpoint to become ready
-print(deploy_response.json())
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC Once the model serving endpoint is ready, you can query it easily with LangChain (see `04_langchain` for example code) running in the same workspace.

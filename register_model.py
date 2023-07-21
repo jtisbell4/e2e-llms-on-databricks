@@ -3,18 +3,22 @@ import pandas as pd
 import torch
 import transformers
 from huggingface_hub import login, snapshot_download
-from mlflow import MlflowClient
 from mlflow.models.signature import ModelSignature
 from mlflow.types import ColSpec, DataType, Schema
 
 # Login to Huggingface to get access to the model
 login(token=dbutils.secrets.get(scope="jtisbell", key="hf-key"))
 
-# it is suggested to pin the revision commit hash and not change it for reproducibility because the uploader might change the model afterwards; you can find the commmit history of llamav2-7b-chat in https://huggingface.co/meta-llama/Llama-2-7b-chat-hf/commits/main
+# it is suggested to pin the revision commit hash and not change it for
+# reproducibility because the uploader might change the model afterwards; you
+# can find the commmit history of llamav2-7b-chat in
+# https://huggingface.co/meta-llama/Llama-2-7b-chat-hf/commits/main
 model = "meta-llama/Llama-2-7b-chat-hf"
 revision = "0ede8dd71e923db6258295621d817ca8714516d4"
 
-# If the model has been downloaded in previous cells, this will not repetitively download large model files, but only the remaining files in the repo
+# If the model has been downloaded in previous cells, this will not
+# repetitively download large model files, but only the remaining files in the
+# repo
 snapshot_location = snapshot_download(
     repo_id=model, revision=revision, ignore_patterns="*.safetensors"
 )
@@ -120,7 +124,8 @@ input_example = pd.DataFrame(
     {"prompt": ["what is ML?"], "temperature": [0.5], "max_new_tokens": [100]}
 )
 
-# Log the model with its details such as artifacts, pip requirements and input example
+# Log the model with its details such as artifacts, pip requirements and input
+# example
 # This may take about 1.7 minutes to complete
 
 mlflow.set_experiment("/Users/taylor.isbell@databricks.com/llm-experiment")
@@ -135,18 +140,11 @@ with mlflow.start_run() as run:
         signature=signature,
     )
 
-# mlflow.set_registry_uri("databricks-uc")
-
-registered_name = "llamav2_7b_chat_model"  # Note that the UC model name follows the pattern <catalog_name>.<schema_name>.<model_name>, corresponding to the catalog, schema, and registered model name
+# TODO: make dynamic
+registered_name = "llamav2_7b_chat_model"
 
 result = mlflow.register_model(
-    "runs:/" + run.info.run_id + "/model",
-    registered_name,
-)
-
-client = MlflowClient()
-
-# Choose the right model version registered in the above cell.
-client.set_registered_model_alias(
-    name=registered_name, alias="Champion", version=1
+    model_uri="runs:/" + run.info.run_id + "/model",
+    name=registered_name,
+    await_registration_for=600,
 )
