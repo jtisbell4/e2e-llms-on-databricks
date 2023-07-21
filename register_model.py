@@ -122,6 +122,9 @@ input_example = pd.DataFrame(
 
 # Log the model with its details such as artifacts, pip requirements and input example
 # This may take about 1.7 minutes to complete
+
+mlflow.set_experiment("taylor-isbell-llm")
+
 with mlflow.start_run() as run:
     mlflow.pyfunc.log_model(
         "model",
