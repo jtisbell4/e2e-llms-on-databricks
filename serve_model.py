@@ -1,7 +1,9 @@
 import os
 
 from databricks.sdk import WorkspaceClient
+from databricks.sdk.core import DatabricksError
 from databricks.sdk.service.serving import EndpointCoreConfigInput
+from h11 import Data
 from mlflow import MlflowClient
 
 os.environ["DATABRICKS_TOKEN"] = dbutils.secrets.get(
@@ -34,8 +36,13 @@ endpoint_config = {
     ],
 }
 
-
-w.serving_endpoints.create(
-    name=endpoint_name,
-    config=EndpointCoreConfigInput.from_dict(endpoint_config),
-)
+try:
+    w.serving_endpoints.create(
+        name=endpoint_name,
+        config=EndpointCoreConfigInput.from_dict(endpoint_config),
+    )
+# Thrown if endpoint already exists
+except DatabricksError:
+    w.serving_endpoints.update_config(
+        name=endpoint_name, config=endpoint_config
+    )

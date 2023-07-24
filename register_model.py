@@ -5,6 +5,9 @@ import transformers
 from huggingface_hub import login, snapshot_download
 from mlflow.models.signature import ModelSignature
 from mlflow.types import ColSpec, DataType, Schema
+import logging
+
+logger = logging.getLogger(__name__)
 
 # Login to Huggingface to get access to the model
 login(token=dbutils.secrets.get(scope="jtisbell", key="hf-key"))
