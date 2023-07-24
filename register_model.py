@@ -1,3 +1,5 @@
+import logging
+
 import mlflow
 import pandas as pd
 import torch
@@ -5,7 +7,6 @@ import transformers
 from huggingface_hub import login, snapshot_download
 from mlflow.models.signature import ModelSignature
 from mlflow.types import ColSpec, DataType, Schema
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -41,6 +42,7 @@ class Llama2(mlflow.pyfunc.PythonModel):
             low_cpu_mem_usage=True,
             trust_remote_code=True,
             device_map="auto",
+            offload_folder="save_folder",
             pad_token_id=self.tokenizer.eos_token_id,
         )
         self.model.eval()
