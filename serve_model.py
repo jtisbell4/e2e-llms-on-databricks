@@ -43,5 +43,5 @@ try:
 # Thrown if endpoint already exists
 except DatabricksError:
     w.serving_endpoints.update_config(
-        name=endpoint_name, config=endpoint_config
+        name=endpoint_name, served_models=endpoint_config["served_models"]
     )
