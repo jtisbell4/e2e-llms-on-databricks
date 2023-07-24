@@ -3,7 +3,6 @@ import os
 from databricks.sdk import WorkspaceClient
 from databricks.sdk.core import DatabricksError
 from databricks.sdk.service.serving import EndpointCoreConfigInput
-from h11 import Data
 from mlflow import MlflowClient
 
 os.environ["DATABRICKS_TOKEN"] = dbutils.secrets.get(
