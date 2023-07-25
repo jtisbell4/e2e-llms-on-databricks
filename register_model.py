@@ -42,9 +42,8 @@ class Llama2(mlflow.pyfunc.PythonModel):
             low_cpu_mem_usage=True,
             trust_remote_code=True,
             device_map="auto",
-            offload_folder="save_folder",
             pad_token_id=self.tokenizer.eos_token_id,
-        )
+        ).to("cuda")
         self.model.eval()
 
     def _build_prompt(self, instruction):
