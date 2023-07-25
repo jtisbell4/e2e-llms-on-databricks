@@ -161,3 +161,4 @@ cython_debug/
 
 .databricks/
 .DS_Store
+scratch.ipynb
