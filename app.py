@@ -1,9 +1,10 @@
 import time
 
 import gradio as gr
-import openai
+from langchain.llms import Databricks
 
 system_message = {"role": "system", "content": "You are a helpful assistant."}
+llm = Databricks(endpoint_name="llama2-7b-chat")
 
 with gr.Blocks() as demo:
     chatbot = gr.Chatbot()
@@ -25,9 +26,10 @@ with gr.Blocks() as demo:
 
     def ask_gpt(message, messages_history):
         messages_history += [{"role": "user", "content": message}]
-        response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo", messages=messages_history
-        )
+        # response = openai.ChatCompletion.create(
+        #     model="gpt-3.5-turbo", messages=messages_history
+        # )
+        response = llm(message, temperature=0.1, max_new_tokens=200)
         return response["choices"][0]["message"]["content"], messages_history
 
     def init_history(messages_history):
