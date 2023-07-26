@@ -11,7 +11,7 @@ from mlflow.types import ColSpec, DataType, Schema
 logger = logging.getLogger(__name__)
 
 # Login to Huggingface to get access to the model
-login(token=dbutils.secrets.get(scope="jtisbell", key="hf-key"))
+login(token=dbutils.secrets.get(scope="llama2-chat-demo", key="HF_KEY"))
 
 # it is suggested to pin the revision commit hash and not change it for
 # reproducibility because the uploader might change the model afterwards; you
@@ -23,7 +23,19 @@ revision = "0ede8dd71e923db6258295621d817ca8714516d4"
 # If the model has been downloaded in previous cells, this will not
 # repetitively download large model files, but only the remaining files in the
 # repo
-snapshot_location = snapshot_download(repo_id=model, revision=revision)
+snapshot_location = snapshot_download(
+    repo_id=model, revision=revision, ignore_patterns="*.bin"
+)
+
+
+# Define prompt template to get the expected features and performance for the chat versions. See our reference code in github for details: https://github.com/facebookresearch/llama/blob/main/llama/generation.py#L212
+
+DEFAULT_SYSTEM_PROMPT = """\
+You are a helpful, respectful and honest assistant. Always answer as helpfully as possible, while being safe. Your answers should not include any harmful, unethical, racist, sexist, toxic, dangerous, or illegal content. Please ensure that your responses are socially unbiased and positive in nature.
+
+If a question does not make any sense, or is not factually coherent, explain why instead of answering something not correct. If you don't know the answer to a question, please don't share false information."""
+
+# Define PythonModel to log with mlflow.pyfunc.log_model
 
 
 class Llama2(mlflow.pyfunc.PythonModel):
@@ -50,18 +62,7 @@ class Llama2(mlflow.pyfunc.PythonModel):
         """
         This method generates the prompt for the model.
         """
-        INSTRUCTION_KEY = "### Instruction:"
-        RESPONSE_KEY = "### Response:"
-        INTRO_BLURB = (
-            "Below is an instruction that describes a task. "
-            "Write a response that appropriately completes the request."
-        )
-
-        return f"""{INTRO_BLURB}
-        {INSTRUCTION_KEY}
-        {instruction}
-        {RESPONSE_KEY}
-        """
+        return f"""<s>[INST]<<SYS>>\n{DEFAULT_SYSTEM_PROMPT}\n<</SYS>>\n\n\n{instruction}[/INST]\n"""
 
     def _generate_response(self, prompt, temperature, max_new_tokens):
         """
@@ -131,7 +132,7 @@ input_example = pd.DataFrame(
 # This may take about 1.7 minutes to complete
 
 mlflow.set_experiment("/Users/taylor.isbell@databricks.com/llm-experiment")
-
+mlflow.utils.databrick
 with mlflow.start_run() as run:
     mlflow.pyfunc.log_model(
         "model",
@@ -142,8 +143,9 @@ with mlflow.start_run() as run:
         signature=signature,
     )
 
+mlflow.set_registry_uri("databricks-uc")
 # TODO: make dynamic
-registered_name = "llamav2_7b_chat_model"
+registered_name = "models.default.llamav2_7b_chat_model_new"
 
 result = mlflow.register_model(
     model_uri="runs:/" + run.info.run_id + "/model",
