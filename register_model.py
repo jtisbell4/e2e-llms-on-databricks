@@ -132,7 +132,7 @@ input_example = pd.DataFrame(
 # This may take about 1.7 minutes to complete
 
 mlflow.set_experiment("/Users/taylor.isbell@databricks.com/llm-experiment")
-mlflow.utils.databrick
+
 with mlflow.start_run() as run:
     mlflow.pyfunc.log_model(
         "model",
