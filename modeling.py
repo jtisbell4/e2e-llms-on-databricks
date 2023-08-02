@@ -39,13 +39,15 @@ revision = "0ede8dd71e923db6258295621d817ca8714516d4"
 from huggingface_hub import snapshot_download
 
 # If the model has been downloaded in previous cells, this will not repetitively download large model files, but only the remaining files in the repo
-snapshot_location = snapshot_download(repo_id=model, revision=revision, ignore_patterns="*.bin")
+snapshot_location = snapshot_download(repo_id=model, revision=revision, ignore_patterns="*.safetensors")
 
 # COMMAND ----------
 
 import mlflow
 import torch
 import transformers
+
+# COMMAND ----------
 
 # Define prompt template to get the expected features and performance for the chat versions. See our reference code in github for details: https://github.com/facebookresearch/llama/blob/main/llama/generation.py#L212
 
@@ -80,7 +82,7 @@ class Llama2(mlflow.pyfunc.PythonModel):
         """
         return f"""<s>[INST]<<SYS>>\n{DEFAULT_SYSTEM_PROMPT}\n<</SYS>>\n\n\n{instruction}[/INST]\n"""
 
-    def _generate_response(self, prompt, temperature, max_new_tokens):
+    def _generate_response(self, prompt: str, temperature: float, max_new_tokens: int) -> str:
         """
         This method generates prediction for a single input.
         """
@@ -100,21 +102,38 @@ class Llama2(mlflow.pyfunc.PythonModel):
 
         return generated_response
       
-    def predict(self, context, model_input):
+    def predict(self, model_input: dict):
         """
         This method generates prediction for the given input.
         """
+        prompt = model_input["prompt"]
+        temperature = model_input.get("temperature", [1.0])
+        max_new_tokens = model_input.get("max_new_tokens", [100])
 
-        outputs = []
+        return self._generate_response(prompt, temperature, max_new_tokens)
 
-        for i in range(len(model_input)):
-          prompt = model_input["prompt"][i]
-          temperature = model_input.get("temperature", [1.0])[i]
-          max_new_tokens = model_input.get("max_new_tokens", [100])[i]
+# COMMAND ----------
 
-          outputs.append(self._generate_response(prompt, temperature, max_new_tokens))
-      
-        return outputs
+class ContextDummy:
+  def __init__(self, artifacts):
+    self.artifacts = artifacts
+
+context = ContextDummy(artifacts={'repository' : snapshot_location})
+
+# COMMAND ----------
+
+model = Llama2()
+model.load_context(context)
+
+# COMMAND ----------
+
+model.predict(
+    model_input={
+        "prompt": "What is ML?",
+        "temperature": 0.1,
+        "max_new_tokens": 200,
+    },
+)
 
 # COMMAND ----------
 
@@ -270,7 +289,6 @@ print(deploy_response.json())
 
 # COMMAND ----------
 
-
 status_url = f'{databricks_url}/api/2.0/serving-endpoints/{endpoint_name}'
 status_response = requests.request(method='GET', headers=deploy_headers, url=status_url)
 
@@ -278,7 +296,3 @@ if status_response.status_code != 200:
   raise Exception(f'Request failed with status {status_response.status_code}, {status_response.text}')
 
 print(status_response.json())
-
-# COMMAND ----------
-
-
