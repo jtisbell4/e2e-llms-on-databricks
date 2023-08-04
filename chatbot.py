@@ -12,7 +12,7 @@ class Chatbot:
             f"<s>[INST]<<SYS>>\n{DEFAULT_SYSTEM_PROMPT}\n<</SYS>>\n\n"
         ]
         self.model = Databricks(
-            endpoint_name="llama2-7b-chat",
+            endpoint_name="optimized-mpt-7b-chat",
             model_kwargs={"temperature": 0.1, "max_new_tokens": 4000},
         )
 
