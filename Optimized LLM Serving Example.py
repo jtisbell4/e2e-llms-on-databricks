@@ -30,16 +30,34 @@ dbutils.library.restartPython()
 
 # COMMAND ----------
 
-from transformers import AutoModelForCausalLM, AutoTokenizer
-
-# If you are using the latest version of transformers that has native MPT support, replace the following line with:
-# model = AutoModelForCausalLM.from_pretrained('mosaicml/mpt-7b', low_cpu_mem_usage=True)
-
-model = AutoModelForCausalLM.from_pretrained('mosaicml/mpt-7b', low_cpu_mem_usage=True, trust_remote_code=True)
+# %pip install -U transformers==4.29.1
+%pip install git+https://github.com/huggingface/transformers@main
+%pip install -U mlflow>=2.5.0
+%pip install -U accelerate>=0.20.3
+dbutils.library.restartPython()
 
 # COMMAND ----------
 
-tokenizer = AutoTokenizer.from_pretrained("mosaicml/mpt-7b")
+from transformers import AutoModelForCausalLM, AutoTokenizer
+import torch
+
+name = 'mosaicml/mpt-7b-chat'
+# If you are using the latest version of transformers that has native MPT support, replace the following line with:
+model = AutoModelForCausalLM.from_pretrained(name, torch_dtype=torch.bfloat16, low_cpu_mem_usage=True)
+
+# model = AutoModelForCausalLM.from_pretrained(name, torch_dtype=torch.bfloat16, low_cpu_mem_usage=True, trust_remote_code=True)
+
+# COMMAND ----------
+
+type(model)
+
+# COMMAND ----------
+
+model.device
+
+# COMMAND ----------
+
+tokenizer = AutoTokenizer.from_pretrained(name)
 
 # COMMAND ----------
 
@@ -56,20 +74,33 @@ tokenizer = AutoTokenizer.from_pretrained("mosaicml/mpt-7b")
 
 # COMMAND ----------
 
+registered_model_name = "optimized-mpt-7b-chat"
+
+# COMMAND ----------
+
 import mlflow
 import numpy as np
 
 with mlflow.start_run():
     components = {
-        "model": model,
-        "tokenizer": tokenizer,
-    }
+            "model": model,
+            "tokenizer": tokenizer,
+        }
     mlflow.transformers.log_model(
         transformers_model=components,
         artifact_path="mpt",
-        registered_model_name="optimized-mpt-7b-example",
-        input_example={"prompt": np.array(["Below is an instruction that describes a task. Write a response that appropriately completes the request.\n\n### Instruction:\nWhat is Apache Spark?\n\n### Response:\n"]), "max_tokens": np.array([75]), "temperature": np.array([0.0])},
-        metadata = {"task": "llm/v1/completions"}
+        registered_model_name=registered_model_name,
+        input_example={
+            "prompt": np.array(
+                [
+                    "Below is an instruction that describes a task. Write a response that appropriately completes the request.\n\n### Instruction:\nWhat is Apache Spark?\n\n### Response:\n"
+                ]
+            ),
+            "max_tokens": np.array([75]),
+            "temperature": np.array([0.0]),
+        },
+        metadata={"task": "llm/v1/completions"},
+        await_registration_for=480,
     )
 
 # COMMAND ----------
@@ -81,9 +112,7 @@ with mlflow.start_run():
 
 # COMMAND ----------
 
-endpoint_name = "optimized-mpt-7b-example"
-model_name = "optimized-mpt-7b-example"
-model_version = "1"
+model_version = 5
 served_model_workload_size = "Medium"
 served_model_scale_to_zero = False
 
@@ -96,11 +125,11 @@ import json
 import requests
 
 data = {
-    "name": endpoint_name,
+    "name": registered_model_name,
     "config": {
         "served_models": [
             {
-                "model_name": model_name,
+                "model_name": registered_model_name,
                 "model_version": model_version,
                 "workload_size": served_model_workload_size,
                 "scale_to_zero_enabled": False,
@@ -129,3 +158,32 @@ print(json.dumps(response.json(), indent=4))
 # MAGIC %md
 # MAGIC ## View your endpoint!
 # MAGIC To see your more information about your endpoint, go to the "Serving" section on the left navigation bar and search for your endpoint name.
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC * MPT has Triton flash attention. When is it appropriate to use it?
+# MAGIC * Why is model not being set to eval mode?
+# MAGIC * Why is model not being sent to GPU?
+# MAGIC * Got the following warning during model logging: `The model 'MPTForCausalLM' is not supported for text-generation. Supported models are ...`
+# MAGIC * Input example didn't get logged due to invalid schema (using mlflow 2.4.2): 
+# MAGIC   ```
+# MAGIC   WARNING mlflow.transformers: Attempted to generate a signature for the saved model or pipeline but encountered an error: The input data is of an incorrect type. <class 'dict'> is invalid. Must be either string or List[str]
+# MAGIC   ```
+# MAGIC   (Side question: where are the docs for expected input schema? Huggingface? mlflow?)
+# MAGIC * In the Google doc the model is logged like:
+# MAGIC   ```
+# MAGIC   mlflow.transformers.log_model(
+# MAGIC         "model",
+# MAGIC         transformers_model=MPT7BInstruct(),
+# MAGIC         input_example={"prompt": np.array(["what is ML?"]), "temperature": np.array([0.5]),"max_tokens": np.array([100])},
+# MAGIC         metadata={"task": "llm/v1/completions"},
+# MAGIC         registered_model_name='mpt'
+# MAGIC   )
+# MAGIC   ```
+# MAGIC   This is different than what is shown above.
+# MAGIC * Error when trying to load model from registry: `AttributeError: module transformers has no attribute MPTForCausalLM` (tried transformers 4.32.0.dev0 and transformers 4.29.1)
+
+# COMMAND ----------
+
+
