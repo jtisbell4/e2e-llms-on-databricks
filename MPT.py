@@ -163,9 +163,13 @@ print(json.dumps(response.json(), indent=4))
 
 # MAGIC %md
 # MAGIC * MPT has Triton flash attention. When is it appropriate to use it?
+# MAGIC **Don't need to worry about this with optimized model serving. Custom C++ inference takes care of this.**
 # MAGIC * Why is model not being set to eval mode?
+# MAGIC **Don't need to worry about this. Transformers flavor takes care of it for you.**
 # MAGIC * Why is model not being sent to GPU?
+# MAGIC **Don't need to worry about this as long as `device` set to 0 when logging as transformers flavor.**
 # MAGIC * Got the following warning during model logging: `The model 'MPTForCausalLM' is not supported for text-generation. Supported models are ...`
+# MAGIC **Fixed by upgrading to newest version of transformers (4.32.0.dev0)**
 # MAGIC * Input example didn't get logged due to invalid schema (using mlflow 2.4.2): 
 # MAGIC   ```
 # MAGIC   WARNING mlflow.transformers: Attempted to generate a signature for the saved model or pipeline but encountered an error: The input data is of an incorrect type. <class 'dict'> is invalid. Must be either string or List[str]
@@ -183,7 +187,3 @@ print(json.dumps(response.json(), indent=4))
 # MAGIC   ```
 # MAGIC   This is different than what is shown above.
 # MAGIC * Error when trying to load model from registry: `AttributeError: module transformers has no attribute MPTForCausalLM` (tried transformers 4.32.0.dev0 and transformers 4.29.1)
-
-# COMMAND ----------
-
-
