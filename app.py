@@ -1,8 +1,18 @@
 import time
 
 import gradio as gr
+from langchain.chat_models import ChatOpenAI
 
-from langchain_bot import chat_llm_chain
+from my_llm import get_llm_chain
+
+# *** This is where you would instantiate your Databricks model endpoint ***
+# We can use the langchain Databricks integration (see link below)
+# https://python.langchain.com/docs/integrations/llms/databricks
+
+# LLM = Databricks(endpoint_name="my_endpoint")
+LLM = ChatOpenAI()
+
+llm_chain = get_llm_chain(llm=LLM)
 
 with gr.Blocks() as demo:
     chatbot = gr.Chatbot()
@@ -31,13 +41,12 @@ with gr.Blocks() as demo:
     def get_response(message, messages_history):
         messages_history += [{"role": "user", "content": message}]
 
-        response = chat_llm_chain.predict(human_input=message)
+        response = llm_chain.predict(human_input=message)
 
         return response, messages_history
 
     def init_history(messages_history):
         messages_history = []
-        # messages_history += [system_message]
         return messages_history
 
     msg.submit(user, [msg, chatbot], [msg, chatbot], queue=False).then(
