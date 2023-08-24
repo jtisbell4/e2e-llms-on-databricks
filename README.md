@@ -10,5 +10,4 @@ A couple things:
   python app.py
   ```
 
-
-[screenshot](./docs/screenshot.png)
+![screenshot](./docs/screenshot.png)
