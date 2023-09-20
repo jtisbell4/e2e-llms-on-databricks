@@ -2,6 +2,7 @@ import time
 
 import gradio as gr
 from langchain.chat_models import ChatOpenAI
+from langchain.llms import Databricks
 
 from my_llm import get_llm_chain
 
@@ -9,8 +10,8 @@ from my_llm import get_llm_chain
 # We can use the langchain Databricks integration (see link below)
 # https://python.langchain.com/docs/integrations/llms/databricks
 
-# LLM = Databricks(endpoint_name="my_endpoint")
-LLM = ChatOpenAI()
+LLM = Databricks(endpoint_name="llama2-7b-chat-taylor")
+# LLM = ChatOpenAI()
 
 llm_chain = get_llm_chain(llm=LLM)
 
