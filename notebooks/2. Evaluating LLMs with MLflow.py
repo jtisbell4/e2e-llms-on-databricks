@@ -45,6 +45,8 @@ def evaluate_model(model, model_input):
 from mlflow.client import MlflowClient
 
 client = MlflowClient()
+
+model_name = 'llamav2_7b_chat_model'
 model_details = [x for x in client.get_registered_model(model_name).latest_versions if x.current_stage == 'None'][0]
 
 # COMMAND ----------
@@ -54,7 +56,7 @@ temperatures = [0.60, 0.80, 0.95]
 
 with mlflow.start_run() as run:
 
-  model = mlflow.pyfunc.load_model(model_uri="models:/llamav2_7b_chat_model/5")
+  model = mlflow.pyfunc.load_model(model_uri=f"models:/{model_name}/{model_details.version}")
 
   for temperature in temperatures:
       evaluate_model(
@@ -63,14 +65,6 @@ with mlflow.start_run() as run:
               {"prompt": [prompt], "max_new_tokens": [100], "temperature": [temperature]}
           )
       )
-
-# COMMAND ----------
-
-evaluation_results = mlflow.evaluate(
-    model,
-    data=test_data,
-    model_type="question-answering",
-)
 
 # COMMAND ----------
 
