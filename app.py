@@ -42,7 +42,7 @@ with gr.Blocks() as demo:
     def get_response(message, messages_history):
         messages_history += [{"role": "user", "content": message}]
 
-        response = llm_chain.predict(human_input=message)
+        response = llm_chain.predict(input=message)
 
         return response, messages_history
 
