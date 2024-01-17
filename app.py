@@ -1,16 +1,17 @@
 import time
-
+import os
 import gradio as gr
 from langchain.chat_models import ChatOpenAI
 from langchain.llms import Databricks
 
 from my_llm import get_llm_chain
+from environment import load_environment_variables
 
 # *** This is where you would instantiate your Databricks model endpoint ***
 # We can use the langchain Databricks integration (see link below)
 # https://python.langchain.com/docs/integrations/llms/databricks
 
-LLM = Databricks(endpoint_name="llama2-7b-chat-taylor")
+LLM = Databricks(endpoint_name="databricks-llama-2-70b-chat")
 # LLM = ChatOpenAI()
 
 llm_chain = get_llm_chain(llm=LLM)
@@ -57,5 +58,7 @@ with gr.Blocks() as demo:
     clear.click(lambda: None, None, chatbot, queue=False).success(
         init_history, [state], [state]
     )
+
+load_environment_variables()
 
 demo.launch()
